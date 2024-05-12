@@ -9,5 +9,6 @@ public class ChatMessage {
 
 	String message;
 	String user;
+	String roomId;
 
 }
