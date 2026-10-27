@@ -9,40 +9,34 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
 
+import py.com.mcodev.springchatsocket.dto.ChatMessageRequest;
 import py.com.mcodev.springchatsocket.dto.ChatMessage;
-import py.com.mcodev.springchatsocket.repository.ChatUserRepository;
+import py.com.mcodev.springchatsocket.service.ChatMessageService;
 
 @Controller
 public class WebSocketController {
 
 	private final SimpMessagingTemplate messagingTemplate;
-	private final ChatUserRepository users;
+	private final ChatMessageService messages;
 
-	public WebSocketController(SimpMessagingTemplate messagingTemplate, ChatUserRepository users) {
+	public WebSocketController(
+			SimpMessagingTemplate messagingTemplate,
+			ChatMessageService messages) {
 		this.messagingTemplate = messagingTemplate;
-		this.users = users;
+		this.messages = messages;
 	}
 
 	@MessageMapping("/private/{sender}/{recipient}")
 	public void chat(
 			@DestinationVariable String sender,
 			@DestinationVariable String recipient,
-			ChatMessage message,
+			ChatMessageRequest message,
 			Principal principal) {
-		if (principal == null || !principal.getName().equals(sender)
-				|| sender.equals(recipient) || !users.existsById(recipient)) {
+		if (principal == null || !principal.getName().equals(sender)) {
 			throw new IllegalArgumentException("Usuario de chat no válido");
 		}
-		if (message == null
-				|| message.getMessage() == null || message.getMessage().isBlank()) {
-			throw new IllegalArgumentException("Mensaje no válido");
-		}
-
-		String conversationId = Stream.of(sender, recipient)
-				.sorted()
-				.collect(Collectors.joining("-"));
-		messagingTemplate.convertAndSend(
-				"/topic/users/" + recipient,
-				new ChatMessage(message.getMessage(), sender, conversationId));
+		ChatMessage savedMessage = messages.sendPrivate(sender, recipient, message == null ? null : message.message());
+		messagingTemplate.convertAndSend("/topic/users/" + recipient, savedMessage);
+		messagingTemplate.convertAndSend("/topic/users/" + sender, savedMessage);
 	}
 }

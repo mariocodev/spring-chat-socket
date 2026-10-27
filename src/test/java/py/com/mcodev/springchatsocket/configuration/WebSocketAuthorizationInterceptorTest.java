@@ -34,4 +34,14 @@ class WebSocketAuthorizationInterceptorTest {
 
 		interceptor.preSend(message, null);
 	}
+
+	@Test
+	void allowsSubscriptionToPresenceUpdates() {
+		StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
+		headers.setUser((Principal) () -> "google-bart");
+		headers.setDestination("/topic/presence");
+		Message<byte[]> message = MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
+
+		interceptor.preSend(message, null);
+	}
 }

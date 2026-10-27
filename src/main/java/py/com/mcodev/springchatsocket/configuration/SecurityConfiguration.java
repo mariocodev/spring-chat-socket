@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -27,9 +29,12 @@ public class SecurityConfiguration {
 			@Value("${spring.application.front.url}") String frontendUrl) throws Exception {
 		http
 				.cors(Customizer.withDefaults())
-				.csrf(csrf -> csrf.ignoringRequestMatchers(
-						new AntPathRequestMatcher("/chat-socket"),
-						new AntPathRequestMatcher("/chat-socket/**")))
+				.csrf(csrf -> csrf
+						.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+						.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+						.ignoringRequestMatchers(
+								new AntPathRequestMatcher("/chat-socket"),
+								new AntPathRequestMatcher("/chat-socket/**")))
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers("/oauth2/**", "/login/**").permitAll()
 						.requestMatchers("/api/**", "/chat-socket", "/chat-socket/**").authenticated()
@@ -40,7 +45,8 @@ public class SecurityConfiguration {
 				.oauth2Login(oauth -> oauth
 						.userInfoEndpoint(userInfo -> userInfo.oidcUserService(googleUserService))
 						.defaultSuccessUrl(frontendUrl + "/", true))
-				.logout(logout -> logout.logoutSuccessUrl(frontendUrl + "/"));
+				.logout(logout -> logout.logoutSuccessHandler(
+						(request, response, authentication) -> response.setStatus(HttpStatus.NO_CONTENT.value())));
 		return http.build();
 	}
 
@@ -49,7 +55,7 @@ public class SecurityConfiguration {
 			@Value("${spring.application.front.url}") String frontendUrl) {
 		CorsConfiguration cors = new CorsConfiguration();
 		cors.setAllowedOrigins(List.of(frontendUrl));
-		cors.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+		cors.setAllowedMethods(List.of("GET", "POST", "DELETE", "OPTIONS"));
 		cors.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
 		cors.setAllowCredentials(true);
 

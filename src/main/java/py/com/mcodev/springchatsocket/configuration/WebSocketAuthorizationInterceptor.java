@@ -22,7 +22,8 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
 		if (userId == null) throw new MessageDeliveryException(message, "Autenticación requerida");
 
 		if (headers.getCommand() == StompCommand.SUBSCRIBE
-				&& (destination == null || !destination.equals("/topic/users/" + userId))) {
+				&& (destination == null || !(destination.equals("/topic/users/" + userId)
+						|| destination.equals("/topic/presence")))) {
 			throw new MessageDeliveryException(message, "No autorizado para suscribirse a este canal");
 		}
 		if (headers.getCommand() == StompCommand.SEND
