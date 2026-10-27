@@ -11,7 +11,7 @@ RUN mvn clean package -DskipTests -Pprod
 # Etapa de runtime: Ejecuta el JAR
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/app-backend.jar app.jar
+COPY --from=build /app/target/spring-chat-backend.jar app.jar
 
 #EXPOSE ${PORT:8080}
 
