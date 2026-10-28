@@ -28,3 +28,4 @@ spring:
                             - email
 server:
     port: ${SERVER_PORT:3000}
+    forward-headers-strategy: framework
