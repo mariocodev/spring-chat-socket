@@ -2,6 +2,7 @@ package py.com.mcodev.springchatsocket.service;
 
 import java.time.Instant;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
@@ -15,6 +16,7 @@ import py.com.mcodev.springchatsocket.model.ChatUser;
 import py.com.mcodev.springchatsocket.repository.ChatUserRepository;
 
 @Service
+@Slf4j
 public class GoogleUserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
 
 	private final OidcUserService delegate = new OidcUserService();
@@ -36,6 +38,8 @@ public class GoogleUserService implements OAuth2UserService<OidcUserRequest, Oid
 			throw new OAuth2AuthenticationException(new OAuth2Error("invalid_user_info"),
 					"Google no devolvió un perfil válido");
 		}
+
+		log.info("User '{}' is logging in...", email);
 
 		ChatUser user = users.findById(id).orElse(null);
 		if (user == null) {
