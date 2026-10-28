@@ -51,10 +51,9 @@ public class SecurityConfiguration {
 	}
 
 	@Bean
-	CorsConfigurationSource corsConfigurationSource(
-			@Value("${spring.application.front.url}") String frontendUrl) {
+	CorsConfigurationSource corsConfigurationSource(@Value("${allowed.origins.url}") String[] allowedOrigins) {
 		CorsConfiguration cors = new CorsConfiguration();
-		cors.setAllowedOrigins(List.of(frontendUrl));
+		cors.setAllowedOrigins(List.of(allowedOrigins));
 		cors.setAllowedMethods(List.of("GET", "POST", "DELETE", "OPTIONS"));
 		cors.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
 		cors.setAllowCredentials(true);

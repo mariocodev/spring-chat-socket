@@ -26,6 +26,9 @@ spring:
                             - openid
                             - profile
                             - email
+allowed:
+    origins:
+        url: ${ALLOWED_ORIGINS_URL:http://localhost:4200}
 server:
     port: ${SERVER_PORT:3000}
     forward-headers-strategy: framework
