@@ -29,6 +29,14 @@ spring:
 server:
     port: ${SERVER_PORT:3000}
     forward-headers-strategy: framework
+    servlet:
+        session:
+            cookie:
+                same-site: none
+                secure: true
+                # opcional pero recomendado: separar la cookie del frontend
+                name: JSESSIONID
+                domain: ${SERVER_DOMAIN:spring-chat-socket.onrender.com}
 logging:
     level:
         org:
