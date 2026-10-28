@@ -36,7 +36,7 @@ public class SecurityConfiguration {
 								new AntPathRequestMatcher("/chat-socket"),
 								new AntPathRequestMatcher("/chat-socket/**")))
 				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers("/oauth2/**", "/login/**").permitAll()
+						.requestMatchers("/oauth2/**", "/login/**", "/health").permitAll()
 						.requestMatchers("/api/**", "/chat-socket", "/chat-socket/**").authenticated()
 						.anyRequest().permitAll())
 				.exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
