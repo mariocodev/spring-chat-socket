@@ -27,15 +27,24 @@ public class SecurityConfiguration {
 			HttpSecurity http,
 			GoogleUserService googleUserService,
 			@Value("${spring.application.front.url}") String frontendUrl) throws Exception {
+
+		// Repositorio de CSRF para que la cookie viaje de forma segura (SameSite=None)
+		CookieCsrfTokenRepository tokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+		tokenRepository.setCookieCustomizer(cookie -> cookie
+				.sameSite("None") // Obligatorio para entornos cross-site (Vercel -> Cloud Run)
+				.secure(true)     // SameSite=None requiere Secure=true
+		);
+
 		http
 				.cors(Customizer.withDefaults())
 				.csrf(csrf -> csrf
-						.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+						.csrfTokenRepository(tokenRepository)
 						.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
 						.ignoringRequestMatchers(
 								new AntPathRequestMatcher("/chat-socket"),
 								new AntPathRequestMatcher("/chat-socket/**")))
 				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 						.requestMatchers("/oauth2/**", "/login/**", "/health").permitAll()
 						.requestMatchers("/api/**", "/chat-socket", "/chat-socket/**").authenticated()
 						.anyRequest().permitAll())
