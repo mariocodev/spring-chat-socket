@@ -44,4 +44,44 @@ class WebSocketAuthorizationInterceptorTest {
 
 		interceptor.preSend(message, null);
 	}
+
+	@Test
+	void allowsSubscriptionToOwnTypingChannel() {
+		StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
+		headers.setUser((Principal) () -> "google-bart");
+		headers.setDestination("/topic/typing/google-bart");
+		Message<byte[]> message = MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
+
+		interceptor.preSend(message, null);
+	}
+
+	@Test
+	void rejectsSubscriptionToAnotherUsersTypingChannel() {
+		StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
+		headers.setUser((Principal) () -> "google-bart");
+		headers.setDestination("/topic/typing/google-lisa");
+		Message<byte[]> message = MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
+
+		assertThrows(MessageDeliveryException.class, () -> interceptor.preSend(message, null));
+	}
+
+	@Test
+	void allowsTypingEventsFromOwnSenderPath() {
+		StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.SEND);
+		headers.setUser((Principal) () -> "google-bart");
+		headers.setDestination("/app/typing/google-bart/google-lisa");
+		Message<byte[]> message = MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
+
+		interceptor.preSend(message, null);
+	}
+
+	@Test
+	void rejectsTypingEventsWithSpoofedSender() {
+		StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.SEND);
+		headers.setUser((Principal) () -> "google-bart");
+		headers.setDestination("/app/typing/google-lisa/google-bart");
+		Message<byte[]> message = MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
+
+		assertThrows(MessageDeliveryException.class, () -> interceptor.preSend(message, null));
+	}
 }

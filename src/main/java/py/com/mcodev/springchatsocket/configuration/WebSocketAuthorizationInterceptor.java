@@ -23,11 +23,13 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
 
 		if (headers.getCommand() == StompCommand.SUBSCRIBE
 				&& (destination == null || !(destination.equals("/topic/users/" + userId)
+						|| destination.equals("/topic/typing/" + userId)
 						|| destination.equals("/topic/presence")))) {
 			throw new MessageDeliveryException(message, "No autorizado para suscribirse a este canal");
 		}
 		if (headers.getCommand() == StompCommand.SEND
-				&& (destination == null || !destination.startsWith("/app/private/" + userId + "/"))) {
+				&& (destination == null || !(destination.startsWith("/app/private/" + userId + "/")
+						|| destination.startsWith("/app/typing/" + userId + "/")))) {
 			throw new MessageDeliveryException(message, "No autorizado para enviar a este canal");
 		}
 		return message;

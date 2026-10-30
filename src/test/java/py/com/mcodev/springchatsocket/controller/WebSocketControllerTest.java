@@ -18,8 +18,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import py.com.mcodev.springchatsocket.dto.ChatMessage;
 import py.com.mcodev.springchatsocket.dto.ChatMessageRequest;
+import py.com.mcodev.springchatsocket.dto.TypingEvent;
 import py.com.mcodev.springchatsocket.model.MessageStatus;
 import py.com.mcodev.springchatsocket.service.ChatMessageService;
+import py.com.mcodev.springchatsocket.service.ChatRoomService;
 
 @ExtendWith(MockitoExtension.class)
 class WebSocketControllerTest {
@@ -29,6 +31,9 @@ class WebSocketControllerTest {
 
 	@Mock
 	private ChatMessageService messages;
+
+	@Mock
+	private ChatRoomService rooms;
 
 	@InjectMocks
 	private WebSocketController controller;
@@ -54,5 +59,33 @@ class WebSocketControllerTest {
 		assertThrows(IllegalArgumentException.class,
 				() -> controller.chat("google-marge", "google-lisa", new ChatMessageRequest("Hola"), sender));
 		verify(messages, never()).sendPrivate("google-marge", "google-lisa", "Hola");
+	}
+
+	@Test
+	void sendsTypingEventToRecipientWhenRoomExists() {
+		Principal sender = () -> "google-bart";
+		when(rooms.privateRoomExists("google-bart", "google-lisa")).thenReturn(true);
+
+		controller.typing("google-bart", "google-lisa", sender);
+
+		verify(messagingTemplate).convertAndSend("/topic/typing/google-lisa", new TypingEvent("google-bart"));
+	}
+
+	@Test
+	void ignoresTypingWhenNoPrivateRoomExists() {
+		Principal sender = () -> "google-bart";
+
+		controller.typing("google-bart", "google-lisa", sender);
+
+		verify(messagingTemplate, never()).convertAndSend(
+				"/topic/typing/google-lisa", new TypingEvent("google-bart"));
+	}
+
+	@Test
+	void rejectsTypingWithSpoofedSender() {
+		Principal sender = () -> "google-bart";
+		assertThrows(IllegalArgumentException.class,
+				() -> controller.typing("google-marge", "google-lisa", sender));
+		verify(rooms, never()).privateRoomExists("google-marge", "google-lisa");
 	}
 }

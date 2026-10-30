@@ -40,6 +40,12 @@ public class ChatRoomService {
 	}
 
 	@Transactional(readOnly = true)
+	public boolean privateRoomExists(String userId, String contactId) {
+		if (contactId == null || contactId.isBlank() || userId.equals(contactId)) return false;
+		return rooms.findByConversationKey(ChatRoom.privateConversationKey(userId, contactId)).isPresent();
+	}
+
+	@Transactional(readOnly = true)
 	public ChatRoom requireParticipantRoom(UUID roomId, String userId) {
 		return rooms.findAccessibleRoom(roomId, userId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversación no encontrada"));
