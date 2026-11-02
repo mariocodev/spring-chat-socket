@@ -21,16 +21,27 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
 		String destination = headers.getDestination();
 		if (userId == null) throw new MessageDeliveryException(message, "Autenticación requerida");
 
-		if (headers.getCommand() == StompCommand.SUBSCRIBE
-				&& (destination == null || !(destination.equals("/topic/users/" + userId)
-						|| destination.equals("/topic/typing/" + userId)
-						|| destination.equals("/topic/presence")))) {
+		if (headers.getCommand() == StompCommand.SUBSCRIBE) {
+			if (destination == null) throw new MessageDeliveryException(message, "No autorizado para suscribirse a este canal");
+			// Permitir canales propios o presencia
+			if (destination.equals("/topic/users/" + userId)
+					|| destination.equals("/topic/typing/" + userId)
+					|| destination.equals("/topic/presence")) {
+				return message;
+			}
+			// Fallback: typing/presence exactos
+			if (destination.startsWith("/topic/users/")) {
+				String destUser = destination.substring("/topic/users/".length());
+				if (destUser.equals(userId)) return message;
+			}
 			throw new MessageDeliveryException(message, "No autorizado para suscribirse a este canal");
 		}
-		if (headers.getCommand() == StompCommand.SEND
-				&& (destination == null || !(destination.startsWith("/app/private/" + userId + "/")
-						|| destination.startsWith("/app/typing/" + userId + "/")))) {
-			throw new MessageDeliveryException(message, "No autorizado para enviar a este canal");
+
+		if (headers.getCommand() == StompCommand.SEND) {
+			if (destination == null || !(destination.startsWith("/app/private/" + userId + "/")
+					|| destination.startsWith("/app/typing/" + userId + "/"))) {
+				throw new MessageDeliveryException(message, "No autorizado para enviar a este canal");
+			}
 		}
 		return message;
 	}
